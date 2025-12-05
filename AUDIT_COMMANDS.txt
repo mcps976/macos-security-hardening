@@ -1,0 +1,208 @@
+# macOS Security Audit Commands
+# Run these commands to perform a complete security audit
+
+# ============================================
+# SYSTEM INFORMATION
+# ============================================
+
+# macOS version
+sw_vers
+
+# System uptime
+uptime
+
+# Disk space
+df -h
+
+# ============================================
+# SECURITY TOOLS STATUS
+# ============================================
+
+# Check if security tools are running
+ps aux | grep -i "lulu\|oversight\|blockblock" | grep -v grep
+
+# Check Homebrew installed security packages
+brew list | grep -E "clamav|lynis"
+
+# ============================================
+# FIREWALL STATUS
+# ============================================
+
+# macOS built-in firewall
+sudo /usr/libexec/ApplicationFirewall/socketfilterfw --getglobalstate
+
+# LuLu status (if running)
+ps aux | grep LuLu | grep -v grep
+
+# ============================================
+# FILEVAULT STATUS
+# ============================================
+
+# Check FileVault encryption status
+fdesetup status
+
+# ============================================
+# SYSTEM INTEGRITY PROTECTION
+# ============================================
+
+# Check SIP status
+csrutil status
+
+# ============================================
+# GATEKEEPER STATUS
+# ============================================
+
+# Check Gatekeeper status
+spctl --status
+
+# ============================================
+# FIRMWARE PASSWORD
+# ============================================
+
+# Check firmware password (requires reboot to verify)
+sudo firmwarepasswd -check
+
+# ============================================
+# SSH STATUS
+# ============================================
+
+# Check if SSH is enabled
+sudo systemsetup -getremotelogin
+
+# ============================================
+# INSTALLED APPLICATIONS
+# ============================================
+
+# List applications in /Applications
+ls -la /Applications/ | grep -E "LuLu|OverSight|BlockBlock|KnockKnock|ReiKey|Netiquette|AppCleaner"
+
+# ============================================
+# CLAMAV MALWARE SCAN
+# ============================================
+
+# Update virus definitions
+freshclam
+
+# Quick scan of critical directories
+clamscan -r ~/Downloads ~/Documents ~/Desktop --infected
+
+# ============================================
+# LYNIS SECURITY AUDIT
+# ============================================
+
+# Run Lynis security audit
+sudo lynis audit system --quick
+
+# ============================================
+# NETWORK CONNECTIONS
+# ============================================
+
+# Active network connections
+netstat -an | grep ESTABLISHED
+
+# Listening services
+sudo lsof -iTCP -sTCP:LISTEN -n -P
+
+# ============================================
+# VPN STATUS
+# ============================================
+
+# Tailscale status
+tailscale status
+
+# Mullvad status
+mullvad status
+
+# ============================================
+# DNS CONFIGURATION
+# ============================================
+
+# Current DNS servers
+scutil --dns | grep 'nameserver\[[0-9]*\]'
+
+# ============================================
+# SYSTEM LOGS
+# ============================================
+
+# Recent security-related log entries
+log show --predicate 'eventMessage contains "security"' --info --last 1h | head -50
+
+# ============================================
+# HOMEBREW SECURITY
+# ============================================
+
+# Check for outdated packages
+brew outdated
+
+# Check for security issues
+brew doctor
+
+# ============================================
+# STARTUP ITEMS
+# ============================================
+
+# List launch agents (user)
+ls -la ~/Library/LaunchAgents/
+
+# List launch daemons (system)
+sudo ls -la /Library/LaunchDaemons/ | head -20
+
+# ============================================
+# CUSTOM SCRIPTS STATUS
+# ============================================
+
+# Verify scripts exist
+ls -la ~/bin/*.sh
+
+# ============================================
+# RECENTLY MODIFIED FILES
+# ============================================
+
+# Files modified in last 24 hours in sensitive locations
+sudo find /usr/local/bin /usr/bin -type f -mtime -1 2>/dev/null
+
+# ============================================
+# RUNNING MAINTENANCE SCRIPTS
+# ============================================
+
+# Run cleanup script
+~/bin/mac-cleanup.sh
+
+# Run malware scan
+~/bin/clamscan-quick.sh
+
+# Run security audit
+~/bin/mac-security-audit.sh
+
+# Run network monitor
+~/bin/network-monitor.sh
+
+# ============================================
+# ALIASES (Run these if configured)
+# ============================================
+
+# cleanup
+# scanmalware
+# secaudit
+# netmon
+# scanstartup
+# checkkeylog
+# viewnetwork
+
+# ============================================
+# EXPORT RESULTS
+# ============================================
+
+# Create audit report directory
+mkdir -p ~/security-audit-reports/$(date +%Y%m%d)
+
+# Save system info
+sw_vers > ~/security-audit-reports/$(date +%Y%m%d)/system-info.txt
+uptime >> ~/security-audit-reports/$(date +%Y%m%d)/system-info.txt
+
+# Save security status
+fdesetup status > ~/security-audit-reports/$(date +%Y%m%d)/security-status.txt
+csrutil status >> ~/security-audit-reports/$(date +%Y%m%d)/security-status.txt
+spctl --status >> ~/security-audit-reports/$(date +%Y%m%d)/security-status.txt
+
+echo "Audit report saved to ~/security-audit-reports/$(date +%Y%m%d)/"
