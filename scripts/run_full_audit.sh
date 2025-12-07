@@ -155,20 +155,32 @@ run_check "User Launch Agents" "ls -la ~/Library/LaunchAgents/" "23-launch-agent
 run_check "System Launch Daemons" "sudo ls -la /Library/LaunchDaemons/ | head -30" "24-launch-daemons.txt"
 
 # ============================================
+# APPLICATION CLEANUP
+# ============================================
+
+echo "=== Application Cleanup ===" | tee -a "$REPORT_DIR/00-summary.txt"
+
+run_check "Old Preference Files" "find ~/Library/Preferences -name '*.plist' -mtime +90 2>/dev/null | head -20" "25-old-preferences.txt"
+run_check "Large Cache Files" "du -sh ~/Library/Caches/* 2>/dev/null | sort -h | tail -20" "26-large-caches.txt"
+run_check "Old Application Support" "find ~/Library/Application\ Support -type d -mtime +180 -maxdepth 1 2>/dev/null" "27-old-app-support.txt"
+run_check "Homebrew Cleanup Needed" "brew cleanup -n 2>&1" "28-brew-cleanup.txt"
+run_check "Old Downloads" "find ~/Downloads -type f -mtime +90 2>/dev/null | wc -l" "29-old-downloads.txt"
+
+# ============================================
 # CUSTOM SCRIPTS
 # ============================================
 
 echo "=== Custom Maintenance Scripts ===" | tee -a "$REPORT_DIR/00-summary.txt"
 
-run_check "Installed Scripts" "ls -la ~/bin/*.sh" "25-custom-scripts.txt"
+run_check "Installed Scripts" "ls -la ~/bin/*.sh" "30-custom-scripts.txt"
 
 # Run custom scripts if they exist
 if [ -f ~/bin/mac-security-audit.sh ]; then
-    run_check "Security Audit Script" "~/bin/mac-security-audit.sh" "26-security-audit.txt"
+    run_check "Security Audit Script" "~/bin/mac-security-audit.sh" "31-security-audit.txt"
 fi
 
 if [ -f ~/bin/network-monitor.sh ]; then
-    run_check "Network Monitor" "~/bin/network-monitor.sh" "27-network-monitor.txt"
+    run_check "Network Monitor" "~/bin/network-monitor.sh" "32-network-monitor.txt"
 fi
 
 # ============================================
