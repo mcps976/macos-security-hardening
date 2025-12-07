@@ -8,8 +8,12 @@ GREEN='\033[0;32m'
 YELLOW='\033[1;33m'
 NC='\033[0m' # No Color
 
-# Create report directory
-REPORT_DIR="$HOME/security-audit-reports/$(date +%Y%m%d-%H%M%S)"
+# Create report directory in the calling user home
+if [ -n "$SUDO_USER" ]; then
+    REPORT_DIR="/Users/$SUDO_USER/security-audit-reports/$(date +%Y%m%d-%H%M%S)"
+else
+    REPORT_DIR="$HOME/security-audit-reports/$(date +%Y%m%d-%H%M%S)"
+fi
 mkdir -p "$REPORT_DIR"
 
 echo -e "${GREEN}========================================${NC}"
