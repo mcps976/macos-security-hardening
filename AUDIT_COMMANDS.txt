@@ -2,6 +2,31 @@
 # Run these commands to perform a complete security audit
 
 # ============================================
+# AUTOMATED FULL AUDIT (RECOMMENDED)
+# ============================================
+
+# Run the automated audit script (creates timestamped reports):
+./scripts/run_full_audit.sh
+
+# Reports will be saved to:
+# ~/security-audit-reports/YYYYMMDD-HHMMSS/
+
+# View the summary:
+cat ~/security-audit-reports/YYYYMMDD-HHMMSS/00-summary.txt
+
+# View all reports:
+ls -la ~/security-audit-reports/YYYYMMDD-HHMMSS/
+
+# To find your most recent report:
+ls -lt ~/security-audit-reports/ | head -5
+
+# ============================================
+# MANUAL COMMANDS (if needed)
+# ============================================
+# The commands below can be run individually if you want specific checks
+# rather than the full automated audit.
+
+# ============================================
 # SYSTEM INFORMATION
 # ============================================
 
