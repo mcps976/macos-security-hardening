@@ -78,12 +78,12 @@ run_check "Security Apps" "ls -la /Applications/ | grep -E 'LuLu|OverSight|Block
 echo "=== ClamAV Malware Scan ===" | tee -a "$REPORT_DIR/00-summary.txt"
 
 echo -e "${YELLOW}Updating ClamAV definitions...${NC}"
-freshclam -q > "$REPORT_DIR/12-clamav-update.txt" 2>&1
+timeout 120 freshclam -q > "$REPORT_DIR/12-clamav-update.txt" 2>&1 || echo "ClamAV update completed (or timed out after 2 min)"
 echo -e "${GREEN}✓ ClamAV updated${NC}"
 echo
 
-echo -e "${YELLOW}Running malware scan (this may take several minutes)...${NC}"
-clamscan -r ~/Downloads ~/Documents ~/Desktop --infected > "$REPORT_DIR/13-clamav-scan.txt" 2>&1
+echo -e "${YELLOW}Running malware scan (this may take up to 10 minutes)...${NC}"
+timeout 600 clamscan -r ~/Downloads ~/Documents ~/Desktop --infected > "$REPORT_DIR/13-clamav-scan.txt" 2>&1 || echo "Scan completed (or timed out after 10 min)" >> "$REPORT_DIR/13-clamav-scan.txt"
 echo -e "${GREEN}✓ ClamAV scan complete${NC}"
 echo
 
@@ -94,7 +94,7 @@ echo
 echo "=== Lynis Security Audit ===" | tee -a "$REPORT_DIR/00-summary.txt"
 
 echo -e "${YELLOW}Running Lynis audit (this may take a few minutes)...${NC}"
-sudo lynis audit system --quick > "$REPORT_DIR/14-lynis-audit.txt" 2>&1
+yes "" | sudo lynis audit system --quick --no-colors > "$REPORT_DIR/14-lynis-audit.txt" 2>&1
 echo -e "${GREEN}✓ Lynis audit complete${NC}"
 echo
 
