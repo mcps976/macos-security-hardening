@@ -1,0 +1,7 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(find /Users/martinswindells/Git/macos/macos-security-hardening -not -path */.git/* -type f)"
+    ]
+  }
+}
