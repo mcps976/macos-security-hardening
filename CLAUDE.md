@@ -95,5 +95,5 @@ Each run of `run_full_audit.sh` creates a timestamped directory under
 
 ## Git Remotes
 
-- `origin` → git@github.com:mcps976/macos-security-hardening.git
-- `forgejo` → git@forgejo:mcps976/macos-security-hardening.git
+- `github` → git@github.com:mcps976/macos-security-hardening.git (public remote)
+- `origin` → a private self-hosted mirror (not reachable externally)

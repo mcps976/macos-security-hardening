@@ -4,3 +4,9 @@ logs/
 tmp/
 .vscode/
 .idea/
+
+# Local topology — never commit real addresses
+network.conf
+
+# Local Claude Code settings — contains absolute paths
+.claude/

@@ -1,0 +1,22 @@
+# network.conf — topology for network-monitor.sh
+#
+# Copy to ~/.config/macos-security-hardening/network.conf and edit.
+# That path is outside the repo on purpose: your real topology should never
+# be committed, least of all to a public one.
+#
+# Addresses below are from RFC 5737's documentation range and are examples only.
+
+# Hosts to probe: "<ip> <tcp-port> <label>"
+# TCP rather than ICMP — many firewalls answer on a port while dropping pings,
+# so a ping test reports a healthy gateway as down.
+HOSTS=(
+  "192.0.2.1   443 LAN gateway / reverse proxy / DNS"
+  "198.51.100.10 22 NAS"
+  "203.0.113.100 22 Node"
+)
+
+# Routes to trace, to show whether each subnet is reached over the wire or a tunnel.
+ROUTE_TARGETS=(192.0.2.1 198.51.100.10 203.0.113.100)
+
+# Internal hostnames to test resolution for (empty is fine).
+INTERNAL_HOSTNAMES=(service-one.internal service-two.internal)

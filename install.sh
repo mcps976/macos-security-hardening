@@ -1,8 +1,12 @@
 #!/bin/bash
 # macOS Security Hardening Stack - Installation Script
-# https://github.com/mcps976/macos-security-hardening
+# Repo: git@github.com:mcps976/macos-security-hardening.git
+#
+# Scripts are SYMLINKED into ~/bin, not copied. The repo is the single source
+# of truth — editing either location edits the same file, and `git status`
+# shows the change. (Copying previously produced three divergent versions.)
 
-set -e  # Exit on error
+set -euo pipefail
 
 SCRIPT_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
 
@@ -12,25 +16,21 @@ echo "  Installation Script"
 echo "=========================================="
 echo
 
-# Check if Homebrew is installed
 if ! command -v brew &> /dev/null; then
     echo "❌ Homebrew not found!"
     echo "Install from: https://brew.sh"
     exit 1
 fi
 
-# Create directories
 echo "--- Creating directories ---"
 mkdir -p ~/bin ~/logs
 echo "✓ Directories created"
 echo
 
-# Update Homebrew
 echo "--- Updating Homebrew ---"
 brew update
 echo
 
-# Install security tools
 echo "--- Installing Security Tools ---"
 echo
 
@@ -61,59 +61,25 @@ brew install lynis
 echo "Installing AppCleaner (Uninstaller)..."
 brew install --cask appcleaner
 
+# REQUIRED: macOS has no native `timeout`. Without coreutils the audit
+# script's ClamAV steps silently no-op while printing success.
+echo "Installing coreutils (provides 'timeout' — required by run_full_audit.sh)..."
+brew install coreutils
+
 echo
 echo "--- Configuring ClamAV ---"
-
-# Create config directory
-sudo mkdir -p /opt/homebrew/etc/clamav
-
-# Create freshclam.conf
-sudo sh -c 'cat > /opt/homebrew/etc/clamav/freshclam.conf << "FRESHCLAM_EOF"
-DatabaseDirectory /opt/homebrew/var/lib/clamav
-UpdateLogFile /opt/homebrew/var/log/clamav/freshclam.log
-DatabaseMirror database.clamav.net
-FRESHCLAM_EOF'
-
-# Create clamd.conf
-sudo sh -c 'cat > /opt/homebrew/etc/clamav/clamd.conf << "CLAMD_EOF"
-LogFile /opt/homebrew/var/log/clamav/clamd.log
-PidFile /opt/homebrew/var/run/clamav/clamd.pid
-DatabaseDirectory /opt/homebrew/var/lib/clamav
-CLAMD_EOF'
-
-# Create necessary directories
-sudo mkdir -p /opt/homebrew/var/lib/clamav
-sudo mkdir -p /opt/homebrew/var/log/clamav
-sudo mkdir -p /opt/homebrew/var/run/clamav
-
-# Set permissions
-sudo chown -R $(whoami) /opt/homebrew/var/lib/clamav
-sudo chown -R $(whoami) /opt/homebrew/var/log/clamav
-sudo chown -R $(whoami) /opt/homebrew/var/run/clamav
-
-echo "✓ ClamAV configured"
-
-# Update virus definitions
-echo "Updating ClamAV virus definitions (this may take a few minutes)..."
-freshclam
-
-echo "✓ ClamAV setup complete"
+# Delegated to fix-clamav.sh rather than duplicated inline
+"$SCRIPT_DIR/scripts/fix-clamav.sh"
 echo
 
-# Install scripts
-echo "--- Installing scripts ---"
-cp "$SCRIPT_DIR/scripts/mac-cleanup.sh" ~/bin/
-cp "$SCRIPT_DIR/scripts/clamscan-quick.sh" ~/bin/
-cp "$SCRIPT_DIR/scripts/mac-security-audit.sh" ~/bin/
-cp "$SCRIPT_DIR/scripts/weekly-maintenance.sh" ~/bin/
-cp "$SCRIPT_DIR/scripts/network-monitor.sh" ~/bin/
-
-chmod +x ~/bin/*.sh
-
-echo "✓ Scripts installed to ~/bin/"
+echo "--- Linking scripts into ~/bin ---"
+for s in mac-cleanup clamscan-quick mac-security-audit weekly-maintenance network-monitor fix-clamav; do
+    ln -sf "$SCRIPT_DIR/scripts/$s.sh" ~/bin/"$s.sh"
+    echo "  ✓ ~/bin/$s.sh -> repo"
+done
+chmod +x "$SCRIPT_DIR"/scripts/*.sh
 echo
 
-# Add aliases if not present
 echo "--- Adding aliases ---"
 if ! grep -q "# macOS Security & Maintenance Aliases" ~/.zshrc 2>/dev/null; then
     cat >> ~/.zshrc << 'ALIAS_EOF'
@@ -124,6 +90,7 @@ alias scanmalware='~/bin/clamscan-quick.sh'
 alias secaudit='~/bin/mac-security-audit.sh'
 alias weekly='~/bin/weekly-maintenance.sh'
 alias netmon='~/bin/network-monitor.sh'
+alias fullaudit='~/Git/macos/macos-security-hardening/scripts/run_full_audit.sh'
 alias scanstartup='open -a KnockKnock'
 alias checkkeylog='open -a ReiKey'
 alias viewnetwork='open -a Netiquette'
@@ -144,23 +111,27 @@ echo
 echo "1. Reload your shell:"
 echo "   source ~/.zshrc"
 echo
-echo "2. Launch always-on security tools:"
+echo "2. Launch the always-on monitors:"
 echo "   open -a LuLu"
 echo "   open -a OverSight"
-echo "   # BlockBlock starts automatically"
+echo "   open -a ReiKey        # ⚠ must RUN to detect anything"
+echo "   # BlockBlock starts automatically via its launch daemon"
 echo
-echo "3. Configure LuLu:"
-echo "   - Keep default settings (Allow Apple Programs, Allow Installed Programs)"
+echo "3. Set each monitor to start at login (in its own preferences)."
+echo "   An installed-but-not-running monitor provides ZERO protection."
+echo
+echo "4. Configure LuLu:"
 echo "   - Leave Passive Mode unchecked"
-echo "   - You'll be alerted for new applications"
+echo "   - Consider disabling 'Allow DNS' — it is the setting that surfaces"
+echo "     a process talking to an unexpected resolver"
 echo
-echo "4. Run initial scans:"
-echo "   scanmalware      # ClamAV malware scan"
-echo "   scanstartup      # KnockKnock startup scan"
-echo "   checkkeylog      # ReiKey keylogger check"
-echo "   secaudit         # Full security audit"
+echo "5. Enable BlockBlock's ClickFix detection (fake-CAPTCHA paste attacks)."
 echo
-echo "📖 Documentation: https://github.com/mcps976/macos-security-hardening"
+echo "6. Run initial scans:"
+echo "   secaudit         # Lynis + system security + monitor status"
+echo "   fullaudit        # Everything, saved to ~/security-audit-reports/"
+echo "   netmon           # Topology-aware network posture"
+echo "   scanmalware      # ClamAV scan"
 echo
-echo "💰 You just saved \$89.95/year vs CleanMyMac!"
+echo "📖 Documentation: README.md in this repo"
 echo

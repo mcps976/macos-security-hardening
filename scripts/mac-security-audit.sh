@@ -1,19 +1,61 @@
 #!/bin/bash
+# macOS Security Audit
+#
+# Canonical source of the system-security checks. run_full_audit.sh CALLS this
+# script rather than repeating these commands — do not duplicate them there.
+
+set -uo pipefail
+
+mkdir -p ~/logs
+LYNIS_LOG=~/logs/lynis-$(date +%Y%m%d).log
+
 echo "=== macOS Security Audit ==="
 echo
+
 echo "1️⃣  Running Lynis audit..."
-sudo lynis audit system --quick --no-colors | tee ~/logs/lynis-$(date +%Y%m%d).log
+echo
+yes "" | sudo lynis audit system --quick --no-colors 2>/dev/null | tee "$LYNIS_LOG"
+
 echo
 echo "2️⃣  Checking security settings..."
-echo "FileVault:" && fdesetup status
 echo
-echo "SIP:" && csrutil status
+
+echo "FileVault:"
+fdesetup status
+
 echo
-echo "Firewall:" && sudo /usr/libexec/ApplicationFirewall/socketfilterfw --getglobalstate
+echo "SIP (System Integrity Protection):"
+csrutil status
+
 echo
-echo "Gatekeeper:" && spctl --status
+echo "Firewall:"
+sudo /usr/libexec/ApplicationFirewall/socketfilterfw --getglobalstate
+
 echo
-echo "Firmware Password:" && sudo firmwarepasswd -check
+echo "Gatekeeper:"
+spctl --status
+
 echo
-echo "✅ Audit Complete"
-echo "📋 Report: ~/logs/lynis-$(date +%Y%m%d).log"
+echo "Firmware Password:"
+sudo firmwarepasswd -check
+
+echo
+echo "SSH Status:"
+sudo systemsetup -getremotelogin
+
+echo
+echo "3️⃣  Objective-See monitors (must be RUNNING, not merely installed):"
+for tool in LuLu OverSight BlockBlock ReiKey; do
+    if pgrep -qi "$tool" 2>/dev/null; then
+        printf '  ✓ %-12s running\n' "$tool"
+    else
+        printf '  ✗ %-12s NOT RUNNING — provides no protection\n' "$tool"
+    fi
+done
+
+echo
+echo "=========================================="
+echo "  ✅ Audit Complete"
+echo "=========================================="
+echo "📋 Lynis report: $LYNIS_LOG"
+echo
