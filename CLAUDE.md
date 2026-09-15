@@ -54,10 +54,14 @@ which also registers shell aliases in `~/.zshrc`.
 - `network-monitor.sh` — one-shot snapshot using netstat, scutil, Tailscale,
   Mullvad
 - `weekly-maintenance.sh` — calls mac-cleanup.sh, brew upgrade, clamscan-quick.sh
-- `fix-clamav.sh` — idempotent ClamAV post-install config (freshclam.conf,
-  clamd.conf, dirs, permissions)
-- `install.sh` — installs Homebrew casks and CLI tools, runs fix-clamav.sh,
-  deploys scripts to ~/bin/, patches ~/.zshrc
+- `fix-clamav.sh` — idempotent ClamAV post-install config (freshclam.conf
+  incl. `UpdateLogFile`, clamd.conf, dirs, permissions)
+- `schedule-freshclam.sh` — renders `launchd/local.clamav.freshclam.plist.template`
+  (`__HOME__` → real home; launchd does not expand `~`) into
+  `~/Library/LaunchAgents/` and bootstraps it: freshclam daily 12:00 + at login.
+  `--remove` unloads. Idempotent
+- `install.sh` — installs Homebrew casks and CLI tools, runs fix-clamav.sh and
+  schedule-freshclam.sh, deploys scripts to ~/bin/, patches ~/.zshrc
 
 ---
 
@@ -66,8 +70,12 @@ which also registers shell aliases in `~/.zshrc`.
 ```
 Config:    /opt/homebrew/etc/clamav/
 Databases: /opt/homebrew/var/lib/clamav/
-Logs:      /opt/homebrew/var/log/
+Logs:      /opt/homebrew/var/log/clamav/freshclam.log   (UpdateLogFile)
+           ~/logs/freshclam-launchd.log                 (LaunchAgent stdout/err)
+Agent:     ~/Library/LaunchAgents/local.clamav.freshclam.plist
 ```
+
+Definition freshness check: `freshclam --version` prints `ClamAV x.y.z/DBVERSION/DATE`.
 
 ---
 
@@ -86,6 +94,9 @@ Each run of `run_full_audit.sh` creates a timestamped directory under
   to stay non-interactive — preserve this pattern
 - `freshclam` must run before `clamscan`; always use `--quiet` (not `-q`,
   deprecated)
+- Never commit absolute `/Users/...` paths (public remote). launchd plists that
+  need one are templates rendered at install time — follow the `__HOME__`
+  pattern in `launchd/`
 - Lynis: use `--no-colors` piped through `timeout` to prevent blocking in
   automated contexts
 - New cross-platform scripts targeting Debian/Ubuntu must use bash 5.x —

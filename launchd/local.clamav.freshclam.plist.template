@@ -1,0 +1,51 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<!--
+  ClamAV definition updates, scheduled.
+
+  Rendered into ~/Library/LaunchAgents/ by scripts/schedule-freshclam.sh, which
+  replaces __HOME__ with the real home directory (launchd does not expand ~ or
+  $HOME in path keys). Do not load this template directly.
+
+  Why a LaunchAgent and not `brew services start clamav`: Homebrew's clamav
+  service runs clamd (the on-access daemon), not freshclam. Without this job the
+  definitions only update when someone remembers to run `scanmalware`.
+-->
+<plist version="1.0">
+<dict>
+    <key>Label</key>
+    <string>local.clamav.freshclam</string>
+
+    <key>ProgramArguments</key>
+    <array>
+        <string>/opt/homebrew/bin/freshclam</string>
+        <string>--quiet</string>
+    </array>
+
+    <!-- Daily at noon: a laptop is more likely awake then than at 03:00.
+         A slot missed while asleep runs at the next wake. -->
+    <key>StartCalendarInterval</key>
+    <dict>
+        <key>Hour</key>
+        <integer>12</integer>
+        <key>Minute</key>
+        <integer>0</integer>
+    </dict>
+
+    <!-- Also run at login so a freshly installed or long-dormant machine
+         catches up immediately. freshclam is cheap: it checks the version
+         first and fetches a small .cdiff when behind. -->
+    <key>RunAtLoad</key>
+    <true/>
+
+    <!-- freshclam's own log is UpdateLogFile in freshclam.conf; these only
+         capture anything it writes outside that (usually nothing). -->
+    <key>StandardOutPath</key>
+    <string>__HOME__/logs/freshclam-launchd.log</string>
+    <key>StandardErrorPath</key>
+    <string>__HOME__/logs/freshclam-launchd.log</string>
+
+    <key>ProcessType</key>
+    <string>Background</string>
+</dict>
+</plist>

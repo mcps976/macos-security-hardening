@@ -61,6 +61,15 @@ Caches and user logs are age-limited (30 days) rather than wiped.
 **`coreutils` is a hard dependency.** macOS has no native `timeout`. Without it the
 ClamAV steps in the full audit silently no-op while printing reassuring output.
 
+**ClamAV definitions update on a schedule, not on memory.** `install.sh` loads a user
+LaunchAgent (`local.clamav.freshclam`, from `launchd/`) that runs `freshclam` daily at
+12:00 and at login. Every other `freshclam` call in this repo sits behind a manual
+alias, and between April and September 2026 none of them ran — the scanner had
+five-month-old signatures while looking fully installed. `scanmalware` now prints the
+definition build date so staleness is visible; `fix-clamav.sh` sets `UpdateLogFile` so a
+failing update leaves a trace in `/opt/homebrew/var/log/clamav/freshclam.log`.
+Manage with `~/bin/schedule-freshclam.sh` (`--remove` to unload).
+
 ## Network topology assumptions
 
 `network-monitor.sh` is written against this homelab:

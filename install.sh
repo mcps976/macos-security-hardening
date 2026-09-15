@@ -72,8 +72,14 @@ echo "--- Configuring ClamAV ---"
 "$SCRIPT_DIR/scripts/fix-clamav.sh"
 echo
 
+echo "--- Scheduling ClamAV definition updates ---"
+# Daily LaunchAgent. Without it, definitions only update when someone runs
+# `scanmalware` — and between April and September 2026 nobody did.
+"$SCRIPT_DIR/scripts/schedule-freshclam.sh"
+echo
+
 echo "--- Linking scripts into ~/bin ---"
-for s in mac-cleanup clamscan-quick mac-security-audit weekly-maintenance network-monitor fix-clamav; do
+for s in mac-cleanup clamscan-quick mac-security-audit weekly-maintenance network-monitor fix-clamav schedule-freshclam; do
     ln -sf "$SCRIPT_DIR/scripts/$s.sh" ~/bin/"$s.sh"
     echo "  ✓ ~/bin/$s.sh -> repo"
 done

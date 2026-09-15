@@ -17,6 +17,20 @@ DatabaseMirror database.clamav.net" > /opt/homebrew/etc/clamav/freshclam.conf'
 # Remove the Example line (required)
 sudo sed -i '' '/^Example/d' /opt/homebrew/etc/clamav/freshclam.conf
 
+# The sample ships with UpdateLogFile commented out, and the `cp` above
+# normally succeeds — so the fallback heredoc that sets it never runs. Without
+# a log, a failing freshclam is invisible (clamscan-quick.sh swallows the
+# error and scans with stale definitions). Ensure each directive is present.
+ensure_directive() {
+    local file="$1" key="$2" value="$3"
+    if ! grep -qE "^${key}\b" "$file"; then
+        sudo sh -c "echo '${key} ${value}' >> '$file'"
+    fi
+}
+ensure_directive /opt/homebrew/etc/clamav/freshclam.conf DatabaseDirectory /opt/homebrew/var/lib/clamav
+ensure_directive /opt/homebrew/etc/clamav/freshclam.conf UpdateLogFile /opt/homebrew/var/log/clamav/freshclam.log
+ensure_directive /opt/homebrew/etc/clamav/freshclam.conf LogTime yes
+
 echo "Creating clamd.conf..."
 sudo cp /opt/homebrew/etc/clamav/clamd.conf.sample /opt/homebrew/etc/clamav/clamd.conf 2>/dev/null || \
 sudo sh -c 'echo "LogFile /opt/homebrew/var/log/clamav/clamd.log
