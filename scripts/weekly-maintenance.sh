@@ -34,7 +34,7 @@ echo
 if [ $UNATTENDED -eq 1 ]; then
     echo "🍺 Refreshing Homebrew metadata (no upgrade in unattended mode)..."
     brew update --quiet 2>&1 | tail -3
-    OUTDATED=$(brew outdated --greedy 2>/dev/null)
+    OUTDATED=$(brew outdated 2>/dev/null)   # no --greedy: auto_updates casks (iTerm2, Obsidian…) update themselves
     if [ -n "$OUTDATED" ]; then
         echo "   Outdated ($(printf '%s\n' "$OUTDATED" | wc -l | tr -d ' ')) — run 'weekly' or 'brew upgrade' at the keyboard:"
         printf '%s\n' "$OUTDATED" | sed 's/^/     /'
