@@ -37,7 +37,8 @@ edit either path and `git status` shows the change.
 | `cleanup` | `mac-cleanup.sh` | Age-limited cache/log cleanup, Trash, Homebrew, Xcode, npm |
 | `scanmalware` | `clamscan-quick.sh` | ClamAV scan of Downloads/Documents/Desktop |
 | `secaudit` | `mac-security-audit.sh` | Lynis + FileVault/SIP/firewall/Gatekeeper + monitor status |
-| `weekly` | `weekly-maintenance.sh` | Cleanup → Homebrew update/upgrade → scan → macOS updates |
+| `weekly` | `weekly-maintenance.sh` | Cleanup → Homebrew update/upgrade → scan → macOS updates (interactive) |
+| — | `weekly-maintenance-run.sh` | Sunday 10:00 LaunchAgent: same, but **reports** outdated packages instead of upgrading; ntfy digest only when there is something to do |
 | `netmon` | `network-monitor.sh` | Topology-aware network posture (see below) |
 | `fullaudit` | `run_full_audit.sh` | Everything, saved to `~/security-audit-reports/` |
 | `scanstartup` | — | Opens KnockKnock |
@@ -69,6 +70,18 @@ five-month-old signatures while looking fully installed. `scanmalware` now print
 definition build date so staleness is visible; `fix-clamav.sh` sets `UpdateLogFile` so a
 failing update leaves a trace in `/opt/homebrew/var/log/clamav/freshclam.log`.
 Manage with `~/bin/schedule-freshclam.sh` (`--remove` to unload).
+
+**Unattended maintenance never runs `brew upgrade`.** A blind upgrade replaces binaries
+under running services (the old process keeps running from a deleted file until something
+restarts it), changes Cellar paths so LuLu prompts for every ad-hoc-signed binary, and
+cask upgrades of running apps and system extensions want a person present. The Sunday
+LaunchAgent (`local.macos-hardening.weekly-maintenance`) runs `weekly-maintenance.sh
+--unattended`: cleanup, `brew update` + outdated **report**, ClamAV scan, `softwareupdate -l`,
+then one notification only if there is something to act on. Applying upgrades stays a
+deliberate `weekly` at the keyboard. Privileged cleanup steps use `sudo -n` and say
+`⊘ requires sudo, skipped` when there is no tty — never a tick over a failure.
+Notification target lives outside the repo in `~/.config/macos-security-hardening/notify.conf`
+(see `scripts/notify.conf.example`); without it the run only logs.
 
 ## Network topology assumptions
 

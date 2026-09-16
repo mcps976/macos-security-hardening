@@ -53,7 +53,14 @@ which also registers shell aliases in `~/.zshrc`.
   plus mdatp/system_profiler checks
 - `network-monitor.sh` — one-shot snapshot using netstat, scutil, Tailscale,
   Mullvad
-- `weekly-maintenance.sh` — calls mac-cleanup.sh, brew upgrade, clamscan-quick.sh
+- `weekly-maintenance.sh` — calls mac-cleanup.sh, brew upgrade, clamscan-quick.sh;
+  `--unattended` swaps the upgrade for a `brew outdated` report
+- `weekly-maintenance-run.sh` — launchd wrapper: dated log under
+  `~/logs/weekly-maintenance/`, ntfy digest (target from
+  `~/.config/macos-security-hardening/notify.conf`, never in-repo) only when
+  outdated packages / macOS updates / infections / errors exist
+- `schedule-weekly-maintenance.sh` — renders `launchd/local.macos-hardening.weekly-maintenance.plist.template`
+  (Sundays 10:00) and bootstraps it; `--now` kickstarts; `--remove`
 - `fix-clamav.sh` — idempotent ClamAV post-install config (freshclam.conf
   incl. `UpdateLogFile`, clamd.conf, dirs, permissions)
 - `schedule-freshclam.sh` — renders `launchd/local.clamav.freshclam.plist.template`
@@ -91,7 +98,9 @@ Each run of `run_full_audit.sh` creates a timestamped directory under
 
 - All paths use `/opt/homebrew/` (Apple Silicon) — Intel would need `/usr/local/`
 - Scripts using sudo: use `sudo -n` with `|| echo "requires sudo"` fallback
-  to stay non-interactive — preserve this pattern
+  to stay non-interactive — preserve this pattern (`mac-cleanup.sh`'s `privileged()`
+  helper is the reference; it also does a one-time `sudo -v` when a tty exists)
+- Never `brew upgrade` unattended — see README "Unattended maintenance"
 - `freshclam` must run before `clamscan`; always use `--quiet` (not `-q`,
   deprecated)
 - Never commit absolute `/Users/...` paths (public remote). launchd plists that

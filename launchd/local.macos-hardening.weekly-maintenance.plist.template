@@ -1,0 +1,54 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<!--
+  Weekly unattended maintenance: cleanup, Homebrew metadata refresh + outdated
+  report (never an upgrade), ClamAV scan, macOS update listing, ntfy digest
+  when there is something to do.
+
+  Rendered into ~/Library/LaunchAgents/ by scripts/schedule-weekly-maintenance.sh
+  (__HOME__ → real home; launchd does not expand ~). Sunday 10:00 — the day
+  before the Monday public-exposure audit, so both digests land before the
+  week starts. No RunAtLoad: this scans three directories and hits the network.
+-->
+<plist version="1.0">
+<dict>
+    <key>Label</key>
+    <string>local.macos-hardening.weekly-maintenance</string>
+
+    <key>ProgramArguments</key>
+    <array>
+        <string>/bin/bash</string>
+        <string>__HOME__/Git/macos/macos-security-hardening/scripts/weekly-maintenance-run.sh</string>
+    </array>
+
+    <key>EnvironmentVariables</key>
+    <dict>
+        <key>PATH</key>
+        <string>/opt/homebrew/bin:/usr/local/bin:/usr/bin:/bin:/usr/sbin:/sbin</string>
+        <key>HOME</key>
+        <string>__HOME__</string>
+        <key>HOMEBREW_NO_AUTO_UPDATE</key>
+        <string>1</string>
+    </dict>
+
+    <key>StartCalendarInterval</key>
+    <dict>
+        <key>Weekday</key>
+        <integer>0</integer>
+        <key>Hour</key>
+        <integer>10</integer>
+        <key>Minute</key>
+        <integer>0</integer>
+    </dict>
+
+    <key>StandardOutPath</key>
+    <string>__HOME__/logs/weekly-maintenance/launchd.log</string>
+    <key>StandardErrorPath</key>
+    <string>__HOME__/logs/weekly-maintenance/launchd.log</string>
+
+    <key>ProcessType</key>
+    <string>Background</string>
+    <key>LowPriorityIO</key>
+    <true/>
+</dict>
+</plist>

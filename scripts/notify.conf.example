@@ -1,0 +1,13 @@
+# notify.conf — where weekly-maintenance-run.sh sends its digest
+#
+# Copy to ~/.config/macos-security-hardening/notify.conf and edit.
+# That path is outside the repo on purpose: a real notification endpoint,
+# hostname and topic are part of your topology and should never be committed,
+# least of all to a public repo. Without this file the run only logs.
+
+# Full ntfy publish URL including topic, e.g. https://ntfy.example.net/alerts
+NTFY_URL="https://ntfy.example.net/alerts"
+
+# Optional: file containing a bearer token for a write-only publisher user.
+# Keep it mode 0600. Leave empty for an unauthenticated topic.
+NTFY_TOKEN_FILE="$HOME/.config/homelab/ntfy-pub-token"

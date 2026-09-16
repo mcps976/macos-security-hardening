@@ -78,8 +78,14 @@ echo "--- Scheduling ClamAV definition updates ---"
 "$SCRIPT_DIR/scripts/schedule-freshclam.sh"
 echo
 
+echo "--- Scheduling weekly unattended maintenance ---"
+# Sundays 10:00: cleanup, brew outdated REPORT (never an unattended upgrade), ClamAV scan,
+# macOS update listing, one ntfy digest only when there is something to do.
+"$SCRIPT_DIR/scripts/schedule-weekly-maintenance.sh"
+echo
+
 echo "--- Linking scripts into ~/bin ---"
-for s in mac-cleanup clamscan-quick mac-security-audit weekly-maintenance network-monitor fix-clamav schedule-freshclam; do
+for s in mac-cleanup clamscan-quick mac-security-audit weekly-maintenance weekly-maintenance-run network-monitor fix-clamav schedule-freshclam schedule-weekly-maintenance; do
     ln -sf "$SCRIPT_DIR/scripts/$s.sh" ~/bin/"$s.sh"
     echo "  ✓ ~/bin/$s.sh -> repo"
 done
