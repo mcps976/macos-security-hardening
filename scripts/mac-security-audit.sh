@@ -37,7 +37,13 @@ spctl --status
 
 echo
 echo "Firmware Password:"
-sudo firmwarepasswd -check
+# Intel only: Apple Silicon has no firmware password (startup security is set
+# in Recovery), so firmwarepasswd just errors there.
+if [ "$(uname -m)" = "arm64" ]; then
+    echo "  skipped (Apple Silicon)"
+else
+    sudo firmwarepasswd -check
+fi
 
 echo
 echo "SSH Status:"

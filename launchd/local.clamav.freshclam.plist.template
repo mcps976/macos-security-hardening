@@ -18,8 +18,8 @@
 
     <key>ProgramArguments</key>
     <array>
-        <string>/opt/homebrew/bin/freshclam</string>
-        <string>--quiet</string>
+        <string>/bin/bash</string>
+        <string>__HOME__/Git/macos/macos-security-hardening/scripts/freshclam-run.sh</string>
     </array>
 
     <!-- Daily at noon: a laptop is more likely awake then than at 03:00.

@@ -14,6 +14,10 @@ TEMPLATE="$SCRIPT_DIR/../launchd/$LABEL.plist.template"
 TARGET="$HOME/Library/LaunchAgents/$LABEL.plist"
 DOMAIN="gui/$(id -u)"
 
+# The weekly scan uses Cisco's ClamAV package (Cisco-Talos/clamav#1887, PR #1873);
+# revert CLAMAV_BIN to /opt/homebrew/bin once Homebrew ships a fixed clamav.
+CLAMAV_BIN="/usr/local/clamav/bin"
+
 unload() {
     # bootout fails harmlessly when the job isn't loaded
     launchctl bootout "$DOMAIN" "$TARGET" 2>/dev/null || true
@@ -36,8 +40,8 @@ if [ ! -f "$TEMPLATE" ]; then
 fi
 
 if [ ! -r "$HOME/.config/macos-security-hardening/notify.conf" ]; then echo "⚠️  no ~/.config/macos-security-hardening/notify.conf — runs will log but not notify (see scripts/notify.conf.example)"; fi
-if [ ! -x /opt/homebrew/bin/freshclam ]; then
-    echo "❌ /opt/homebrew/bin/freshclam not found — run install.sh (or brew install clamav) first"
+if [ ! -x "$CLAMAV_BIN/freshclam" ]; then
+    echo "❌ $CLAMAV_BIN/freshclam not found — install Cisco's ClamAV .pkg first (see README)"
     exit 1
 fi
 

@@ -105,11 +105,11 @@ ls -la /Applications/ | grep -E "LuLu|OverSight|BlockBlock|KnockKnock|ReiKey|Net
 # CLAMAV MALWARE SCAN
 # ============================================
 
-# Update virus definitions
-freshclam
+# Update virus definitions (Cisco package binaries, Homebrew config/database: clamav#1887)
+/usr/local/clamav/bin/freshclam --config-file=/opt/homebrew/etc/clamav/freshclam.conf
 
 # Quick scan of critical directories
-clamscan -r ~/Downloads ~/Documents ~/Desktop --infected
+/usr/local/clamav/bin/clamscan --database=/opt/homebrew/var/lib/clamav -r ~/Downloads ~/Documents ~/Desktop --infected
 
 # ============================================
 # LYNIS SECURITY AUDIT

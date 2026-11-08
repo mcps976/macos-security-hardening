@@ -9,7 +9,7 @@ Open-source security and maintenance toolkit for macOS. Complete replacement for
 - **BlockBlock** — persistence monitor (launch agents, daemons, login items, cron)
 - **ReiKey** — keyboard event-tap (keylogger) detector
 - **KnockKnock** — on-demand persistence scanner, VirusTotal cross-checked
-- **ClamAV** — malware scanner
+- **ClamAV** — malware scanner (Cisco's official macOS package; Homebrew supplies config and database)
 - **Lynis** — system security auditor
 - **AppCleaner** — complete application uninstaller
 
@@ -70,6 +70,18 @@ five-month-old signatures while looking fully installed. `scanmalware` now print
 definition build date so staleness is visible; `fix-clamav.sh` sets `UpdateLogFile` so a
 failing update leaves a trace in `/opt/homebrew/var/log/clamav/freshclam.log`.
 Manage with `~/bin/schedule-freshclam.sh` (`--remove` to unload).
+
+**ClamAV binaries come from Cisco's package, not Homebrew (for now).** Homebrew's
+clamav 1.5.4_1 links OpenSSL 4.1 and rejects every database signature, so clamscan
+loads 0 signatures and freshclam fails from 26 October 2026
+([Cisco-Talos/clamav#1887](https://github.com/Cisco-Talos/clamav/issues/1887), fix in
+[PR #1873](https://github.com/Cisco-Talos/clamav/pull/1873)). Install
+`clamav-<version>.macos.universal.pkg` from clamav.net after checking its Talos PGP
+signature and Apple Developer ID / notarisation. It installs to `/usr/local/clamav`
+with no config of its own, so every call passes `--config-file` (freshclam) or
+`--database` (clamscan) to keep using Homebrew's config and database. Keep Homebrew's
+clamav installed: it owns those paths and is the rollback target. When a fixed
+release lands in Homebrew, set `CLAMAV_BIN` back to `/opt/homebrew/bin` in the scripts.
 
 **Unattended maintenance never runs `brew upgrade`.** A blind upgrade replaces binaries
 under running services (the old process keeps running from a deleted file until something

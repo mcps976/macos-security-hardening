@@ -106,12 +106,18 @@ else
     echo -e "${RED}⚠ 'timeout' not found (brew install coreutils) — running uncapped${NC}"
 fi
 
+# ClamAV from Cisco's package, not Homebrew (Cisco-Talos/clamav#1887, PR #1873);
+# revert CLAMAV_BIN to /opt/homebrew/bin once Homebrew ships a fix.
+CLAMAV_BIN="/usr/local/clamav/bin"
+CLAMAV_CONF="/opt/homebrew/etc/clamav/freshclam.conf"
+CLAMAV_DB="/opt/homebrew/var/lib/clamav"
+
 echo -e "${YELLOW}Updating ClamAV definitions...${NC}"
-${TIMEOUT_BIN:+$TIMEOUT_BIN 120} freshclam -q > "$REPORT_DIR/08-clamav-update.txt" 2>&1 \
+${TIMEOUT_BIN:+$TIMEOUT_BIN 120} "$CLAMAV_BIN/freshclam" --config-file="$CLAMAV_CONF" --quiet > "$REPORT_DIR/08-clamav-update.txt" 2>&1 \
     || echo "freshclam exited non-zero (update failed or timed out)" >> "$REPORT_DIR/08-clamav-update.txt"
 
 echo -e "${YELLOW}Scanning Downloads/Documents/Desktop (up to 10 min)...${NC}"
-${TIMEOUT_BIN:+$TIMEOUT_BIN 600} clamscan -r ~/Downloads ~/Documents ~/Desktop --infected \
+${TIMEOUT_BIN:+$TIMEOUT_BIN 600} "$CLAMAV_BIN/clamscan" --database="$CLAMAV_DB" -r ~/Downloads ~/Documents ~/Desktop --infected \
     > "$REPORT_DIR/09-clamav-scan.txt" 2>&1 \
     || echo "clamscan exited non-zero (findings or timeout)" >> "$REPORT_DIR/09-clamav-scan.txt"
 echo -e "${GREEN}✓ 09-clamav-scan.txt${NC}"

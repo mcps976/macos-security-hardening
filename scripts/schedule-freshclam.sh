@@ -17,6 +17,11 @@ TEMPLATE="$SCRIPT_DIR/../launchd/$LABEL.plist.template"
 TARGET="$HOME/Library/LaunchAgents/$LABEL.plist"
 DOMAIN="gui/$(id -u)"
 
+# Cisco's package, not Homebrew (Cisco-Talos/clamav#1887, PR #1873); revert
+# CLAMAV_BIN to /opt/homebrew/bin once Homebrew ships a fixed clamav.
+CLAMAV_BIN="/usr/local/clamav/bin"
+CLAMAV_LOG="/opt/homebrew/var/log/clamav/freshclam.log"
+
 unload() {
     # bootout fails harmlessly when the job isn't loaded
     launchctl bootout "$DOMAIN" "$TARGET" 2>/dev/null || true
@@ -38,8 +43,8 @@ if [ ! -f "$TEMPLATE" ]; then
     exit 1
 fi
 
-if [ ! -x /opt/homebrew/bin/freshclam ]; then
-    echo "❌ /opt/homebrew/bin/freshclam not found — run install.sh (or brew install clamav) first"
+if [ ! -x "$CLAMAV_BIN/freshclam" ]; then
+    echo "❌ $CLAMAV_BIN/freshclam not found — install Cisco's ClamAV .pkg first (see README)"
     exit 1
 fi
 
@@ -60,6 +65,6 @@ echo "✓ $TARGET"
 echo "✓ Loaded into $DOMAIN — daily at 12:00 and at login"
 echo
 echo "Status:  launchctl print $DOMAIN/$LABEL | grep -E 'state|last exit'"
-echo "Log:     /opt/homebrew/var/log/clamav/freshclam.log"
+echo "Log:     $CLAMAV_LOG"
 echo "Remove:  $(basename "$0") --remove"
 echo

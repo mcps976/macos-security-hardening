@@ -48,7 +48,7 @@ which also registers shell aliases in `~/.zshrc`.
 - `run_full_audit.sh` — orchestrates 30+ security checks, writes numbered
   report files and a `00-summary.txt`
 - `mac-cleanup.sh` — cache purge, DNS flush, Homebrew cleanup, memory purge
-- `clamscan-quick.sh` — runs freshclam then scans key user directories
+- `clamscan-quick.sh` — runs freshclam then scans key user directories (Cisco package binaries)
 - `mac-security-audit.sh` — thin wrapper around `lynis audit system --quick`
   plus mdatp/system_profiler checks
 - `network-monitor.sh` — one-shot snapshot using netstat, scutil, Tailscale,
@@ -75,6 +75,7 @@ which also registers shell aliases in `~/.zshrc`.
 ## ClamAV Paths (Apple Silicon)
 
 ```
+Binaries:  /usr/local/clamav/bin/   (Cisco .pkg — NOT Homebrew; see below)
 Config:    /opt/homebrew/etc/clamav/
 Databases: /opt/homebrew/var/lib/clamav/
 Logs:      /opt/homebrew/var/log/clamav/freshclam.log   (UpdateLogFile)
@@ -82,7 +83,13 @@ Logs:      /opt/homebrew/var/log/clamav/freshclam.log   (UpdateLogFile)
 Agent:     ~/Library/LaunchAgents/local.clamav.freshclam.plist
 ```
 
-Definition freshness check: `freshclam --version` prints `ClamAV x.y.z/DBVERSION/DATE`.
+Homebrew's clamav 1.5.4_1 (OpenSSL 4.1) loads no signatures: Cisco-Talos/clamav#1887,
+fix in PR #1873. The package has no config of its own, so always pass
+`--config-file=/opt/homebrew/etc/clamav/freshclam.conf` to freshclam and
+`--database=/opt/homebrew/var/lib/clamav` to clamscan. Each script defines
+`CLAMAV_BIN`; revert it to `/opt/homebrew/bin` once Homebrew ships a fix.
+
+Definition freshness check: `freshclam --config-file=… --version` prints `ClamAV x.y.z/DBVERSION/DATE`.
 
 ---
 
@@ -96,7 +103,8 @@ Each run of `run_full_audit.sh` creates a timestamped directory under
 
 ## Key Constraints
 
-- All paths use `/opt/homebrew/` (Apple Silicon) — Intel would need `/usr/local/`
+- Paths use `/opt/homebrew/` (Apple Silicon) — Intel would need `/usr/local/` — except
+  the ClamAV binaries, which are `/usr/local/clamav/bin` (Cisco package) on both
 - Scripts using sudo: use `sudo -n` with `|| echo "requires sudo"` fallback
   to stay non-interactive — preserve this pattern (`mac-cleanup.sh`'s `privileged()`
   helper is the reference; it also does a one-time `sudo -v` when a tty exists)
@@ -117,3 +125,9 @@ Each run of `run_full_audit.sh` creates a timestamped directory under
 
 - `github` → git@github.com:mcps976/macos-security-hardening.git (public remote)
 - `origin` → a private self-hosted mirror (not reachable externally)
+- **Never push `main` to `github`.** The public history was squashed and shares no ancestry with `main`;
+  a forced push would publish the private history. Publish a fresh commit on top of it instead:
+  `git fetch github`, then
+  `new=$(git commit-tree "$(git rev-parse HEAD^{tree})" -p github/main -m "describe the change")`,
+  then `git push github "$new":refs/heads/main`. Match the signing of the existing public commits
+  (`git commit-tree -S` if they are signed). Run the public-exposure audit afterwards (see `~/Git/README.md`).

@@ -4,6 +4,12 @@
 echo "=== Configuring ClamAV ==="
 echo
 
+# Config, database and logs stay under Homebrew's prefix; the binaries come from
+# Cisco's package (Cisco-Talos/clamav#1887, PR #1873). Revert CLAMAV_BIN to
+# /opt/homebrew/bin once Homebrew ships a fixed clamav.
+CLAMAV_BIN="/usr/local/clamav/bin"
+CLAMAV_CONF="/opt/homebrew/etc/clamav/freshclam.conf"
+
 # Create config directory if it doesn't exist
 sudo mkdir -p /opt/homebrew/etc/clamav
 
@@ -55,7 +61,7 @@ echo
 
 # Update virus definitions
 echo "Updating ClamAV virus definitions..."
-freshclam
+"$CLAMAV_BIN/freshclam" --config-file="$CLAMAV_CONF"
 
 echo
 echo "✓ ClamAV setup complete"

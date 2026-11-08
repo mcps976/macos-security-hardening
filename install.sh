@@ -53,7 +53,14 @@ echo "Installing Netiquette (Network Viewer)..."
 brew install --cask netiquette
 
 echo "Installing ClamAV (Anti-Malware)..."
+# Homebrew's clamav provides the config and database paths. The scripts run
+# Cisco's signed .pkg in /usr/local/clamav instead, because Homebrew's 1.5.4_1
+# links OpenSSL 4.1 and loads no signatures (Cisco-Talos/clamav#1887, PR #1873).
 brew install clamav
+if [ ! -x /usr/local/clamav/bin/freshclam ]; then
+    echo "⚠️  Cisco ClamAV package missing: install clamav-1.5.4.macos.universal.pkg (or later)"
+    echo "    from https://www.clamav.net/downloads after verifying its signatures (see README)"
+fi
 
 echo "Installing Lynis (Security Auditor)..."
 brew install lynis
