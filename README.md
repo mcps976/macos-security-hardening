@@ -35,7 +35,7 @@ edit either path and `git status` shows the change.
 | Alias | Script | Purpose |
 |---|---|---|
 | `cleanup` | `mac-cleanup.sh` | Age-limited cache/log cleanup, Trash, Homebrew, Xcode, npm |
-| `scanmalware` | `clamscan-quick.sh` | ClamAV scan of Downloads/Documents/Desktop |
+| `scanmalware` | `clamscan-quick.sh` | ClamAV scan of Downloads, Documents, Desktop and Nextcloud; `scanmalware --full` scans the home folder and system locations (no media or caches); the Sunday run does the full scan on the first Sunday of the month |
 | `secaudit` | `mac-security-audit.sh` | Lynis + FileVault/SIP/firewall/Gatekeeper + monitor status |
 | `weekly` | `weekly-maintenance.sh` | Cleanup → Homebrew update/upgrade → scan → macOS updates (interactive) |
 | — | `weekly-maintenance-run.sh` | Sunday 10:00 LaunchAgent: same, but **reports** outdated packages instead of upgrading; ntfy digest only when there is something to do |

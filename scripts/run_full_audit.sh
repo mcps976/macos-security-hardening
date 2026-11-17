@@ -106,20 +106,17 @@ else
     echo -e "${RED}⚠ 'timeout' not found (brew install coreutils) — running uncapped${NC}"
 fi
 
-# ClamAV from Cisco's package, not Homebrew (Cisco-Talos/clamav#1887, PR #1873);
-# revert CLAMAV_BIN to /opt/homebrew/bin once Homebrew ships a fix.
-CLAMAV_BIN="/usr/local/clamav/bin"
-CLAMAV_CONF="/opt/homebrew/etc/clamav/freshclam.conf"
-CLAMAV_DB="/opt/homebrew/var/lib/clamav"
-
-echo -e "${YELLOW}Updating ClamAV definitions...${NC}"
-${TIMEOUT_BIN:+$TIMEOUT_BIN 120} "$CLAMAV_BIN/freshclam" --config-file="$CLAMAV_CONF" --quiet > "$REPORT_DIR/08-clamav-update.txt" 2>&1 \
-    || echo "freshclam exited non-zero (update failed or timed out)" >> "$REPORT_DIR/08-clamav-update.txt"
-
-echo -e "${YELLOW}Scanning Downloads/Documents/Desktop (up to 10 min)...${NC}"
-${TIMEOUT_BIN:+$TIMEOUT_BIN 600} "$CLAMAV_BIN/clamscan" --database="$CLAMAV_DB" -r ~/Downloads ~/Documents ~/Desktop --infected \
-    > "$REPORT_DIR/09-clamav-scan.txt" 2>&1 \
-    || echo "clamscan exited non-zero (findings or timeout)" >> "$REPORT_DIR/09-clamav-scan.txt"
+# The one scanner (clamscan-quick.sh) updates the definitions, scans
+# Downloads, Documents, Desktop and Nextcloud and decides failure itself
+# ("SCAN FAILED"), so the scan list and the check live in one place.
+echo -e "${YELLOW}Updating definitions and scanning (up to 45 min)...${NC}"
+echo "see 09-clamav-scan.txt (clamscan-quick.sh updates the definitions)" > "$REPORT_DIR/08-clamav-update.txt"
+# A quick scan with Nextcloud took about 26 min awake (2026-11-12). timeout
+# counts wall-clock time, so a lid-shut sleep counts against the limit too.
+LOG_FILE="$REPORT_DIR/09-clamscan.log" ${TIMEOUT_BIN:+$TIMEOUT_BIN 2700} "$SCRIPT_DIR/clamscan-quick.sh" \
+    > "$REPORT_DIR/09-clamav-scan.txt" 2>&1
+SCAN_RC=$?   # 0 clean, 1 infected, 2 failed, 124 timeout
+[ "$SCAN_RC" -eq 124 ] && echo "SCAN FAILED: timed out after 45 min" >> "$REPORT_DIR/09-clamav-scan.txt"
 echo -e "${GREEN}✓ 09-clamav-scan.txt${NC}"
 echo
 
@@ -177,7 +174,8 @@ run_check "Installed Scripts" "ls -la ~/bin/*.sh" "21-custom-scripts.txt"
         || echo "  (all four Objective-See monitors running)"
     echo
     echo -n "Outdated Packages: "; wc -l < "$REPORT_DIR/12-outdated-packages.txt" | tr -d ' '
-    echo -n "ClamAV: "; grep 'Infected files:' "$REPORT_DIR/09-clamav-scan.txt" 2>/dev/null || echo "see 09-clamav-scan.txt"
+    echo -n "ClamAV: "; grep -E 'SCAN FAILED|Scan complete' "$REPORT_DIR/09-clamav-scan.txt" 2>/dev/null | tail -1 \
+        || grep 'Infected files:' "$REPORT_DIR/09-clamav-scan.txt" 2>/dev/null || echo "see 09-clamav-scan.txt"
     echo
     echo "=== Egress / VPN ==="
     grep -E 'public IP|exit node|backend' "$REPORT_DIR/10-network-monitor.txt" 2>/dev/null || true
@@ -186,7 +184,9 @@ run_check "Installed Scripts" "ls -la ~/bin/*.sh" "21-custom-scripts.txt"
 # ============================================
 # RETENTION
 # ============================================
-PRUNED=$(ls -1dt "$REPORT_ROOT"/*/ 2>/dev/null | tail -n +$((KEEP_REPORTS + 1)))
+# Report dirs are named YYYYMMDD-HHMMSS, so a reverse name sort is newest first.
+PRUNED=$(find "$REPORT_ROOT" -mindepth 1 -maxdepth 1 -type d -name '[0-9]*-[0-9]*' 2>/dev/null \
+    | sort -r | tail -n +$((KEEP_REPORTS + 1)))
 if [ -n "$PRUNED" ]; then
     echo "$PRUNED" | while read -r d; do rm -rf "$d"; done
     echo

@@ -33,8 +33,15 @@ echo "🧹 Running cleanup..."
 echo
 if [ $UNATTENDED -eq 1 ]; then
     echo "🍺 Refreshing Homebrew metadata (no upgrade in unattended mode)..."
-    brew update --quiet 2>&1 | tail -3
-    OUTDATED=$(brew outdated 2>/dev/null)   # no --greedy: auto_updates casks (iTerm2, Obsidian…) update themselves
+    # Time-limited, and a failure is reported but never stops the run: on
+    # 2026-11-01 a failed refresh ended the run before the ClamAV scan.
+    # "FAILED" is a word weekly-maintenance-run.sh alerts on.
+    TMO=$(command -v gtimeout || command -v timeout || true)
+    UPD_OUT=$(${TMO:+$TMO 300} brew update --quiet 2>&1); UPD_RC=$?
+    printf '%s\n' "$UPD_OUT" | tail -3
+    [ $UPD_RC -ne 0 ] && echo "   ⚠️  Homebrew refresh FAILED (exit $UPD_RC); the outdated list may be stale"
+    OUTDATED=$(${TMO:+$TMO 120} brew outdated 2>/dev/null) \
+        || echo "   ⚠️  brew outdated FAILED or timed out"   # no --greedy: auto_updates casks (iTerm2, Obsidian…) update themselves
     if [ -n "$OUTDATED" ]; then
         echo "   Outdated ($(printf '%s\n' "$OUTDATED" | wc -l | tr -d ' ')) — run 'weekly' or 'brew upgrade' at the keyboard:"
         printf '%s\n' "$OUTDATED" | sed 's/^/     /'
@@ -46,10 +53,15 @@ else
     brew update && brew upgrade
 fi
 
-# 3. ClamAV update & scan
+# 3. ClamAV update & scan: the full scan on the month's first run (day 1-7,
+#    unattended only; Martin, 2026-11-12), the quick scan otherwise.
 echo
 echo "🔍 Running malware scan..."
-"$SCRIPT_DIR/clamscan-quick.sh"
+if [ $UNATTENDED -eq 1 ] && [ "$(date +%d)" -le 7 ]; then
+    "$SCRIPT_DIR/clamscan-quick.sh" --full
+else
+    "$SCRIPT_DIR/clamscan-quick.sh"
+fi
 
 # 4. Check for macOS updates (list only — never installs)
 echo

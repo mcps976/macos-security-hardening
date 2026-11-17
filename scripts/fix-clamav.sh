@@ -52,9 +52,9 @@ sudo mkdir -p /opt/homebrew/var/log/clamav
 sudo mkdir -p /opt/homebrew/var/run/clamav
 
 # Set permissions
-sudo chown -R $(whoami) /opt/homebrew/var/lib/clamav
-sudo chown -R $(whoami) /opt/homebrew/var/log/clamav
-sudo chown -R $(whoami) /opt/homebrew/var/run/clamav
+sudo chown -R "$(whoami)" /opt/homebrew/var/lib/clamav
+sudo chown -R "$(whoami)" /opt/homebrew/var/log/clamav
+sudo chown -R "$(whoami)" /opt/homebrew/var/run/clamav
 
 echo "✓ ClamAV configured"
 echo

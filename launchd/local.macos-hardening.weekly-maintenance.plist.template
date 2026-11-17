@@ -8,7 +8,11 @@
   Rendered into ~/Library/LaunchAgents/ by scripts/schedule-weekly-maintenance.sh
   (__HOME__ → real home; launchd does not expand ~). Sunday 10:00 — the day
   before the Monday public-exposure audit, so both digests land before the
-  week starts. No RunAtLoad: this scans three directories and hits the network.
+  week starts. RunAtLoad catches up a Sunday missed while the Mac was off
+  (launchd catches up a run missed in sleep, not one missed while shut down,
+  as on 2026-11-08); weekly-maintenance-run.sh exits at once unless it is the
+  Sunday 10:00 hour or the newest weekly log is over 6.5 days old, so an
+  ordinary login doesn't start a scan.
 -->
 <plist version="1.0">
 <dict>
@@ -40,6 +44,9 @@
         <key>Minute</key>
         <integer>0</integer>
     </dict>
+
+    <key>RunAtLoad</key>
+    <true/>
 
     <key>StandardOutPath</key>
     <string>__HOME__/logs/weekly-maintenance/launchd.log</string>

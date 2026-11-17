@@ -17,6 +17,25 @@ LOG_DIR="$HOME/logs/weekly-maintenance"
 CONF="${NOTIFY_CONF:-$HOME/.config/macos-security-hardening/notify.conf}"
 
 mkdir -p "$LOG_DIR"
+
+# launchd starts this at every login (RunAtLoad) as well as Sundays 10:00, and
+# fires a missed Sunday late after sleep. Run when no weekly log has been
+# written since the most recent Sunday 10:00: that covers the scheduled run, a
+# late fire at any hour, and a Sunday missed while the Mac was off, and skips
+# ordinary logins. (The old rule, "the Sunday 10:00 hour, or the newest log over
+# 6.5 days old", skipped Sunday 2026-11-15: a Thursday catch-up had made the
+# newest log too recent.) Every start is noted in launchd.log (StandardOutPath),
+# so a missing run can be told apart from a run that was never started.
+days_back=$(date +%u); [ "$days_back" = 7 ] && days_back=0      # Sunday is 7
+last_sunday10=$(date -v-"${days_back}"d -v10H -v0M -v0S +%s)
+[ "$(date +%s)" -lt "$last_sunday10" ] && last_sunday10=$(( last_sunday10 - 7 * 86400 ))
+newest=$(find "$LOG_DIR" -maxdepth 1 -name '20[0-9][0-9]-[0-9][0-9]-[0-9][0-9].log' 2>/dev/null | sort | tail -1)
+if [ -n "$newest" ] && [ "$(stat -f %m "$newest")" -ge "$last_sunday10" ]; then
+    echo "$(date '+%F %T') started: not due (${newest##*/} is newer than Sunday 10:00)"
+    exit 0
+fi
+echo "$(date '+%F %T') started: due (no weekly log since $(date -r "$last_sunday10" '+%F %H:%M'); newest ${newest:-none})"
+
 LOG="$LOG_DIR/$(date +%Y-%m-%d).log"
 
 NTFY_URL=""; NTFY_TOKEN_FILE=""
