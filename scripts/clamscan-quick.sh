@@ -57,10 +57,17 @@ mkdir -p "$(dirname "$LOG_FILE")"
 # Printed before and after so a stale database is visible rather than silent —
 # the daily LaunchAgent (schedule-freshclam.sh) should already have done the
 # update; this call is the belt to that brace.
-defs() { "$CLAMAV_BIN/freshclam" --config-file="$CLAMAV_CONF" --version 2>/dev/null | cut -d/ -f2-; }
+# Under sudo (run_full_audit.sh), update as the invoking user so the database
+# stays theirs: as root, freshclam drops to DatabaseOwner (macOS's _clamav),
+# which can't write the user-owned database folder, so the update would fail.
+FRESHCLAM=("$CLAMAV_BIN/freshclam")
+if [ "$(id -u)" -eq 0 ] && [ -n "${SUDO_USER:-}" ]; then
+    FRESHCLAM=(sudo -u "$SUDO_USER" "${FRESHCLAM[@]}")
+fi
+defs() { "${FRESHCLAM[@]}" --config-file="$CLAMAV_CONF" --version 2>/dev/null | cut -d/ -f2-; }
 
 echo "📡 Updating virus definitions (before: $(defs))..."
-if ! "$CLAMAV_BIN/freshclam" --config-file="$CLAMAV_CONF" --quiet 2>/dev/null; then
+if ! "${FRESHCLAM[@]}" --config-file="$CLAMAV_CONF" --quiet 2>/dev/null; then
     echo "⚠️  freshclam update failed — continuing with existing definitions"
     echo "    see $CLAMAV_LOG"
 fi
