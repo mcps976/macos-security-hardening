@@ -45,6 +45,14 @@ fi
 REPORT_DIR="$REPORT_ROOT/$(date +%Y%m%d-%H%M%S)"
 mkdir -p "$REPORT_DIR"
 
+# Homebrew refuses to run as root: under sudo, run it as the invoking user.
+# run_check evals in this shell and the upgrade block is a subshell, so
+# every brew call below picks this up.
+if [ "$(id -u)" -eq 0 ] && [ -n "${SUDO_USER:-}" ]; then
+    BREW_BIN=$(command -v brew)
+    brew() { sudo -H -u "$SUDO_USER" "$BREW_BIN" "$@"; }
+fi
+
 echo -e "${GREEN}========================================${NC}"
 echo -e "${GREEN}  macOS Complete Security Audit${NC}"
 echo -e "${GREEN}  $(date)${NC}"
