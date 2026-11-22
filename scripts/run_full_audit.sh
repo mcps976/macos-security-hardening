@@ -45,12 +45,18 @@ fi
 REPORT_DIR="$REPORT_ROOT/$(date +%Y%m%d-%H%M%S)"
 mkdir -p "$REPORT_DIR"
 
+# The audit is read-only: no Homebrew auto-update (it updates the taps, and
+# its messages were counted as outdated packages). The opt-in upgrade below
+# runs 'brew update' itself.
+export HOMEBREW_NO_AUTO_UPDATE=1
+
 # Homebrew refuses to run as root: under sudo, run it as the invoking user.
 # run_check evals in this shell and the upgrade block is a subshell, so
-# every brew call below picks this up.
+# every brew call below picks this up. sudo resets the environment, so the
+# setting above is passed explicitly.
 if [ "$(id -u)" -eq 0 ] && [ -n "${SUDO_USER:-}" ]; then
     BREW_BIN=$(command -v brew)
-    brew() { sudo -H -u "$SUDO_USER" "$BREW_BIN" "$@"; }
+    brew() { sudo -H -u "$SUDO_USER" env HOMEBREW_NO_AUTO_UPDATE=1 "$BREW_BIN" "$@"; }
 fi
 
 echo -e "${GREEN}========================================${NC}"
@@ -143,7 +149,7 @@ echo "=== Logs / Packages / Persistence ===" | tee -a "$SUMMARY"
 run_check "Security Logs" \
     "log show --predicate 'eventMessage contains \"security\"' --info --last 1h | head -100" \
     "11-security-logs.txt"
-run_check "Outdated Packages" "brew outdated" "12-outdated-packages.txt"
+run_check "Outdated Packages" "brew outdated --quiet" "12-outdated-packages.txt"
 run_check "Homebrew Doctor" "brew doctor" "13-brew-doctor.txt"
 run_check "User Launch Agents" "ls -la ~/Library/LaunchAgents/" "14-launch-agents.txt"
 run_check "System Launch Daemons" "sudo ls -la /Library/LaunchDaemons/" "15-launch-daemons.txt"
@@ -181,7 +187,7 @@ run_check "Installed Scripts" "ls -la ~/bin/*.sh" "21-custom-scripts.txt"
     grep 'provides no protection' "$REPORT_DIR/07-security-audit.txt" \
         || echo "  (all four Objective-See monitors running)"
     echo
-    echo -n "Outdated Packages: "; wc -l < "$REPORT_DIR/12-outdated-packages.txt" | tr -d ' '
+    echo -n "Outdated Packages: "; grep -c . "$REPORT_DIR/12-outdated-packages.txt"
     echo -n "ClamAV: "; grep -E 'SCAN FAILED|Scan complete' "$REPORT_DIR/09-clamav-scan.txt" 2>/dev/null | tail -1 \
         || grep 'Infected files:' "$REPORT_DIR/09-clamav-scan.txt" 2>/dev/null || echo "see 09-clamav-scan.txt"
     echo
