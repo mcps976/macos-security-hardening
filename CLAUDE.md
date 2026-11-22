@@ -75,7 +75,7 @@ which also registers shell aliases in `~/.zshrc`.
 ## ClamAV Paths (Apple Silicon)
 
 ```
-Binaries:  /usr/local/clamav/bin/   (Cisco .pkg — NOT Homebrew; see below)
+Binaries:  /opt/homebrew/bin/        (Homebrew clamav ≥ 1.5.5)
 Config:    /opt/homebrew/etc/clamav/
 Databases: /opt/homebrew/var/lib/clamav/
 Logs:      /opt/homebrew/var/log/clamav/freshclam.log   (UpdateLogFile)
@@ -83,11 +83,12 @@ Logs:      /opt/homebrew/var/log/clamav/freshclam.log   (UpdateLogFile)
 Agent:     ~/Library/LaunchAgents/local.clamav.freshclam.plist
 ```
 
-Homebrew's clamav 1.5.4_1 (OpenSSL 4.1) loads no signatures: Cisco-Talos/clamav#1887,
-fix in PR #1873. The package has no config of its own, so always pass
-`--config-file=/opt/homebrew/etc/clamav/freshclam.conf` to freshclam and
-`--database=/opt/homebrew/var/lib/clamav` to clamscan. Each script defines
-`CLAMAV_BIN`; revert it to `/opt/homebrew/bin` once Homebrew ships a fix.
+Homebrew's clamav 1.5.4_1 (OpenSSL 4.1) loaded no signatures (Cisco-Talos/clamav#1887);
+1.5.5 fixed it, and the scripts use Homebrew's binaries again since 2026-11-22. Cisco's
+package in `/usr/local/clamav` stays installed as the rollback: set `CLAMAV_BIN` to
+`/usr/local/clamav/bin` and re-run the two schedulers. It has no config of its own, so
+the scripts keep passing `--config-file=/opt/homebrew/etc/clamav/freshclam.conf` to
+freshclam and `--database=/opt/homebrew/var/lib/clamav` to clamscan.
 
 Definition freshness check: `freshclam --config-file=… --version` prints `ClamAV x.y.z/DBVERSION/DATE`.
 
@@ -103,8 +104,7 @@ Each run of `run_full_audit.sh` creates a timestamped directory under
 
 ## Key Constraints
 
-- Paths use `/opt/homebrew/` (Apple Silicon) — Intel would need `/usr/local/` — except
-  the ClamAV binaries, which are `/usr/local/clamav/bin` (Cisco package) on both
+- Paths use `/opt/homebrew/` (Apple Silicon) — Intel would need `/usr/local/`
 - Scripts using sudo: use `sudo -n` with `|| echo "requires sudo"` fallback
   to stay non-interactive — preserve this pattern (`mac-cleanup.sh`'s `privileged()`
   helper is the reference; it also does a one-time `sudo -v` when a tty exists)

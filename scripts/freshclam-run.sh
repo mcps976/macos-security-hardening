@@ -9,11 +9,10 @@
 # Background: freshclam failed every day from 26 October 2026 (ClamAV 1.5.4
 # with OpenSSL 4 rejected database signatures) and nothing said so for six days.
 #
-# ClamAV binaries come from Cisco's official macOS package (/usr/local/clamav),
-# not Homebrew: Homebrew's clamav 1.5.4_1 links OpenSSL 4.1 and rejects every
-# database signature (Cisco-Talos/clamav#1887, fix in PR #1873). Homebrew's
-# freshclam.conf and database directory are still used. When a fixed clamav
-# lands in Homebrew, set CLAMAV_BIN back to /opt/homebrew/bin.
+# ClamAV binaries are Homebrew's again since 1.5.5 (2026-11-22), which fixed the
+# OpenSSL 4 signature failure of 1.5.4_1 (Cisco-Talos/clamav#1887). Cisco's
+# package in /usr/local/clamav stays installed as the rollback: set CLAMAV_BIN
+# to /usr/local/clamav/bin to return to it.
 #
 # Notification target lives OUTSIDE the repo (this repo is public):
 #   ~/.config/macos-security-hardening/notify.conf   — see scripts/notify.conf.example
@@ -25,7 +24,7 @@ set -uo pipefail
 CONF="${NOTIFY_CONF:-$HOME/.config/macos-security-hardening/notify.conf}"
 MAX_AGE_DAYS="${MAX_AGE_DAYS:-3}"
 
-CLAMAV_BIN="/usr/local/clamav/bin"
+CLAMAV_BIN="/opt/homebrew/bin"
 CLAMAV_CONF="/opt/homebrew/etc/clamav/freshclam.conf"   # DatabaseDirectory, UpdateLogFile
 
 NTFY_URL=""

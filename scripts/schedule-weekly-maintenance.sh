@@ -14,9 +14,9 @@ TEMPLATE="$SCRIPT_DIR/../launchd/$LABEL.plist.template"
 TARGET="$HOME/Library/LaunchAgents/$LABEL.plist"
 DOMAIN="gui/$(id -u)"
 
-# The weekly scan uses Cisco's ClamAV package (Cisco-Talos/clamav#1887, PR #1873);
-# revert CLAMAV_BIN to /opt/homebrew/bin once Homebrew ships a fixed clamav.
-CLAMAV_BIN="/usr/local/clamav/bin"
+# Homebrew's ClamAV again since 1.5.5 (OpenSSL 4 fix for Cisco-Talos/clamav#1887,
+# 2026-11-22). Cisco's package in /usr/local/clamav stays installed as the rollback.
+CLAMAV_BIN="/opt/homebrew/bin"
 
 unload() {
     # bootout fails harmlessly when the job isn't loaded
@@ -41,7 +41,7 @@ fi
 
 if [ ! -r "$HOME/.config/macos-security-hardening/notify.conf" ]; then echo "⚠️  no ~/.config/macos-security-hardening/notify.conf — runs will log but not notify (see scripts/notify.conf.example)"; fi
 if [ ! -x "$CLAMAV_BIN/freshclam" ]; then
-    echo "❌ $CLAMAV_BIN/freshclam not found — install Cisco's ClamAV .pkg first (see README)"
+    echo "❌ $CLAMAV_BIN/freshclam not found — brew install clamav first (see README)"
     exit 1
 fi
 

@@ -17,9 +17,9 @@ echo
 # Under sudo (run_full_audit.sh), scan the invoking user's home, not root's.
 if [ -n "${SUDO_USER:-}" ]; then USER_HOME="/Users/$SUDO_USER"; else USER_HOME="$HOME"; fi
 
-# Cisco's package, not Homebrew (Cisco-Talos/clamav#1887, PR #1873; see
-# freshclam-run.sh). Revert CLAMAV_BIN to /opt/homebrew/bin once Homebrew ships a fix.
-CLAMAV_BIN="/usr/local/clamav/bin"
+# Homebrew's ClamAV again since 1.5.5 (OpenSSL 4 fix for Cisco-Talos/clamav#1887,
+# 2026-11-22). Cisco's package in /usr/local/clamav stays installed as the rollback.
+CLAMAV_BIN="/opt/homebrew/bin"
 CLAMAV_CONF="/opt/homebrew/etc/clamav/freshclam.conf"
 CLAMAV_DB="/opt/homebrew/var/lib/clamav"
 CLAMAV_LOG="/opt/homebrew/var/log/clamav/freshclam.log"

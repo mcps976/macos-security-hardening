@@ -4,10 +4,9 @@
 echo "=== Configuring ClamAV ==="
 echo
 
-# Config, database and logs stay under Homebrew's prefix; the binaries come from
-# Cisco's package (Cisco-Talos/clamav#1887, PR #1873). Revert CLAMAV_BIN to
-# /opt/homebrew/bin once Homebrew ships a fixed clamav.
-CLAMAV_BIN="/usr/local/clamav/bin"
+# Homebrew's ClamAV again since 1.5.5 (OpenSSL 4 fix for Cisco-Talos/clamav#1887,
+# 2026-11-22). Cisco's package in /usr/local/clamav stays installed as the rollback.
+CLAMAV_BIN="/opt/homebrew/bin"
 CLAMAV_CONF="/opt/homebrew/etc/clamav/freshclam.conf"
 
 # Create config directory if it doesn't exist
